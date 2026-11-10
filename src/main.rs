@@ -1,15 +1,20 @@
-use std::env;
-use std::fs;
+mod token;
 
-fn main() {
+use anyhow::bail;
+use token::Token;
+
+use std::{env, fs};
+
+fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 3 {
-        eprintln!("Usage: {} tokenize <filename>", args[0]);
-        return;
+        bail!("Usage: {} tokenize <filename>", args[0]);
     }
 
     let command = &args[1];
     let filename = &args[2];
+
+    let mut tokens = Vec::<Token>::new();
 
     match command.as_str() {
         "tokenize" => {
@@ -21,15 +26,26 @@ fn main() {
                 String::new()
             });
 
-            // TODO: Uncomment the code below to pass the first stage
-            if !file_contents.is_empty() {
-                panic!("Scanner not implemented");
-            } else {
-                println!("EOF  null"); // Placeholder, replace this line when implementing the scanner
+            let mut content = file_contents.chars();
+            while let Some(ch) = content.next() {
+                match ch {
+                    ch if ch.is_whitespace() => continue,
+                    _ => {
+                        tokens.push(Token::try_from(ch)?);
+                    }
+                }
             }
         }
         _ => {
             eprintln!("Unknown command: {}", command);
         }
     }
+
+    tokens.push(Token::end_of_file());
+
+    for token in tokens {
+        println!("{}", token.to_string())
+    }
+
+    Ok(())
 }
